@@ -24,7 +24,7 @@ app.post('/fetch-details', async (req, res) => {
     await page.goto(url, { waitUntil: 'networkidle2', timeout: 120000 });
     await new Promise(resolve => setTimeout(resolve, 2000));
     const pageUrl = await page.url();
-    const { headingCounts, htmlVersion, internalLinks, externalLinks, linkHrefs, hasLoginForm } = await page.evaluate((pageUrl) => {
+    const evalResult = await page.evaluate((pageUrl) => {
       const headingCounts = {};
       for (let i = 1; i <= 6; i++) {
         headingCounts['h' + i] = document.querySelectorAll('h' + i).length;
@@ -94,15 +94,22 @@ app.post('/fetch-details', async (req, res) => {
           break;
         }
       }
+      // Return all heading counts as top-level fields
       return {
-        headingCounts,
         htmlVersion,
         internalLinks,
         externalLinks,
         linkHrefs: anchors.map(a => a.getAttribute('href')),
-        hasLoginForm
+        hasLoginForm,
+        h1: headingCounts.h1,
+        h2: headingCounts.h2,
+        h3: headingCounts.h3,
+        h4: headingCounts.h4,
+        h5: headingCounts.h5,
+        h6: headingCounts.h6
       };
     }, pageUrl);
+    const { htmlVersion, internalLinks, externalLinks, linkHrefs, hasLoginForm, h1, h2, h3, h4, h5, h6 } = evalResult;
 
     // Check for inaccessible links (4xx/5xx)
     let inaccessibleLinks = 0;
@@ -128,18 +135,19 @@ app.post('/fetch-details', async (req, res) => {
 
     const title = await page.title();
     await browser.close();
-    const allHeadings = {};
-    for (let i = 1; i <= 6; i++) {
-      allHeadings['h' + i] = typeof headingCounts['h' + i] === 'number' ? headingCounts['h' + i] : 0;
-    }
     res.json({
       title,
       htmlVersion,
-      ...allHeadings,
-      internalLinks,
-      externalLinks,
+      h1: typeof h1 === 'number' ? h1 : 0,
+      h2: typeof h2 === 'number' ? h2 : 0,
+      h3: typeof h3 === 'number' ? h3 : 0,
+      h4: typeof h4 === 'number' ? h4 : 0,
+      h5: typeof h5 === 'number' ? h5 : 0,
+      h6: typeof h6 === 'number' ? h6 : 0,
+      internalLinks: typeof internalLinks === 'number' ? internalLinks : 0,
+      externalLinks: typeof externalLinks === 'number' ? externalLinks : 0,
       inaccessibleLinks,
-      hasLoginForm
+      hasLoginForm: typeof hasLoginForm === 'boolean' ? hasLoginForm : false
     });
   } catch (err) {
     res.status(500).json({ error: err.toString() });
