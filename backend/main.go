@@ -111,6 +111,102 @@ func main() {
 		return c.JSON(http.StatusOK, map[string]string{"message": "URLs deleted"})
 	})
 
+	// Add endpoint to save processed results
+	e.POST("/add-result", func(c echo.Context) error {
+		type Result struct {
+			Url               string `json:"url"`
+			Hostname          string `json:"hostname"`
+			Title             string `json:"title"`
+			HtmlVersion       string `json:"htmlVersion"`
+			H1                int    `json:"h1"`
+			H2                int    `json:"h2"`
+			H3                int    `json:"h3"`
+			H4                int    `json:"h4"`
+			H5                int    `json:"h5"`
+			H6                int    `json:"h6"`
+			InternalLinks     int    `json:"internalLinks"`
+			ExternalLinks     int    `json:"externalLinks"`
+			InaccessibleLinks int    `json:"inaccessibleLinks"`
+			HasLoginForm      bool   `json:"hasLoginForm"`
+			Error             string `json:"error"`
+		}
+		var r Result
+		if err := c.Bind(&r); err != nil {
+			return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid request"})
+		}
+		_, err := db.Exec(`INSERT INTO url_results (url, hostname, title, html_version, h1, h2, h3, h4, h5, h6, internal_links, external_links, inaccessible_links, has_login_form, error) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			r.Url, r.Hostname, r.Title, r.HtmlVersion, r.H1, r.H2, r.H3, r.H4, r.H5, r.H6, r.InternalLinks, r.ExternalLinks, r.InaccessibleLinks, r.HasLoginForm, r.Error)
+		if err != nil {
+			   // Log the actual error and return it in the response for debugging
+			   log.Printf("Failed to save result: %v", err)
+			   return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to save result", "details": err.Error()})
+		}
+		return c.JSON(http.StatusOK, map[string]string{"message": "Result saved"})
+	})
+
+		// Endpoint to delete processed results
+		e.POST("/delete-results", func(c echo.Context) error {
+				type DeleteRequest struct {
+						IDs []int `json:"ids"`
+				}
+				var req DeleteRequest
+				if err := c.Bind(&req); err != nil || len(req.IDs) == 0 {
+						return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid request or empty IDs"})
+				}
+				placeholders := make([]string, len(req.IDs))
+				args := make([]interface{}, len(req.IDs))
+				for i, id := range req.IDs {
+						placeholders[i] = "?"
+						args[i] = id
+				}
+				query := "DELETE FROM url_results WHERE id IN (" + strings.Join(placeholders, ",") + ")"
+				_, err := db.Exec(query, args...)
+				if err != nil {
+						return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to delete results"})
+				}
+				return c.JSON(http.StatusOK, map[string]string{"message": "Results deleted"})
+		})
+
+		// Endpoint to get all processed results
+		e.GET("/results", func(c echo.Context) error {
+		rows, err := db.Query(`SELECT id, url, hostname, title, html_version, h1, h2, h3, h4, h5, h6, internal_links, external_links, inaccessible_links, has_login_form, error, created_at FROM url_results ORDER BY id DESC`)
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to fetch results"})
+		}
+		defer rows.Close()
+		var results []map[string]interface{}
+		for rows.Next() {
+			var id int
+			var url, hostname, title, htmlVersion, errStr string
+			var h1, h2, h3, h4, h5, h6, internalLinks, externalLinks, inaccessibleLinks int
+			var hasLoginForm bool
+			var createdAt string
+			if err := rows.Scan(&id, &url, &hostname, &title, &htmlVersion, &h1, &h2, &h3, &h4, &h5, &h6, &internalLinks, &externalLinks, &inaccessibleLinks, &hasLoginForm, &errStr, &createdAt); err != nil {
+				continue
+			}
+			results = append(results, map[string]interface{}{
+				"id":                id,
+				"url":               url,
+				"hostname":          hostname,
+				"title":             title,
+				"htmlVersion":       htmlVersion,
+				"h1":                h1,
+				"h2":                h2,
+				"h3":                h3,
+				"h4":                h4,
+				"h5":                h5,
+				"h6":                h6,
+				"internalLinks":     internalLinks,
+				"externalLinks":     externalLinks,
+				"inaccessibleLinks": inaccessibleLinks,
+				"hasLoginForm":      hasLoginForm,
+				"error":             errStr,
+				"createdAt":         createdAt,
+			})
+		}
+		return c.JSON(http.StatusOK, results)
+	})
+
 	e.Logger.Fatal(e.Start(":8080"))
 
 }

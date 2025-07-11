@@ -2,11 +2,12 @@ import React from 'react';
 
 
 import './index.css';
-import LandingPage from './Pages/LandingPage';
+import Home from './Pages/home';
+
 
 
 function App() {
-  return <LandingPage />;
+  return <Home />;
 }
 
 export default App;
