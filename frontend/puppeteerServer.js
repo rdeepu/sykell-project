@@ -111,8 +111,9 @@ app.post('/fetch-details', async (req, res) => {
     }, pageUrl);
     const { htmlVersion, internalLinks, externalLinks, linkHrefs, hasLoginForm, h1, h2, h3, h4, h5, h6 } = evalResult;
 
-    // Check for inaccessible links (4xx/5xx)
+    // Check for inaccessible links (4xx/5xx) and collect their status codes
     let inaccessibleLinks = 0;
+    let inaccessibleLinksList = [];
     if (Array.isArray(linkHrefs)) {
       const checked = new Set();
       for (const href of linkHrefs) {
@@ -126,8 +127,14 @@ app.post('/fetch-details', async (req, res) => {
         try {
           const resp = await page.goto(absUrl, { waitUntil: 'domcontentloaded', timeout: 15000 });
           const status = resp.status();
-          if (status >= 400 && status < 600) inaccessibleLinks++;
-        } catch { inaccessibleLinks++; }
+          if (status >= 400 && status < 600) {
+            inaccessibleLinks++;
+            inaccessibleLinksList.push({ url: absUrl, status });
+          }
+        } catch (e) {
+          inaccessibleLinks++;
+          inaccessibleLinksList.push({ url: absUrl, status: 'error' });
+        }
       }
       // Return to original page
       await page.goto(pageUrl, { waitUntil: 'networkidle2', timeout: 120000 });
@@ -147,6 +154,7 @@ app.post('/fetch-details', async (req, res) => {
       internalLinks: typeof internalLinks === 'number' ? internalLinks : 0,
       externalLinks: typeof externalLinks === 'number' ? externalLinks : 0,
       inaccessibleLinks,
+      inaccessibleLinksList,
       hasLoginForm: typeof hasLoginForm === 'boolean' ? hasLoginForm : false
     });
   } catch (err) {

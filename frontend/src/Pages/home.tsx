@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 const Home: React.FC = () => {
+  const navigate = useNavigate();
   // Pagination, sorting, and filtering state
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 10;
@@ -259,7 +261,8 @@ const Home: React.FC = () => {
             externalLinks: typeof data.externalLinks === 'number' ? data.externalLinks : 0,
             inaccessibleLinks: typeof data.inaccessibleLinks === 'number' ? data.inaccessibleLinks : 0,
             hasLoginForm: typeof data.hasLoginForm === 'boolean' ? data.hasLoginForm : false,
-            error: data.error || ''
+            error: data.error || '',
+            inaccessibleLinksList: data.inaccessibleLinksList ? JSON.stringify(data.inaccessibleLinksList) : ''
           })
         });
         if (!addResultRes.ok) {
@@ -317,6 +320,20 @@ const Home: React.FC = () => {
     } catch (err) {
       alert('Failed to connect to backend');
     }
+  };
+
+  // Handler for Analyze button
+  const handleAnalyze = () => {
+    if (selectedResultIds.length !== 1) {
+      alert('Please select exactly one processed result to analyze.');
+      return;
+    }
+    const selected = results.find(r => r.id === selectedResultIds[0]);
+    if (!selected) {
+      alert('Selected result not found.');
+      return;
+    }
+    navigate('/details', { state: { result: selected } });
   };
 
   return (
@@ -562,6 +579,14 @@ const Home: React.FC = () => {
                 className="ml-6 px-6 py-2 bg-red-600 text-white font-semibold rounded shadow hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-400 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Delete
+              </button>
+              <button
+                type="button"
+                onClick={handleAnalyze}
+                disabled={selectedResultIds.length !== 1}
+                className="ml-2 px-6 py-2 bg-purple-600 text-white font-semibold rounded shadow hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-400 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Analyze
               </button>
             </div>
             {/* Global search box */}
