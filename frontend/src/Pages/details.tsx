@@ -87,38 +87,63 @@ const DetailsPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-white" style={{ fontFamily: 'Roboto, Arial, sans-serif' }}>
-      <div className="w-full max-w-xl p-8 bg-white rounded shadow-lg border-2 border-blue-800 flex flex-col items-center">
+    <div className="min-h-screen flex flex-col items-center relative px-2 sm:px-4 md:px-8 lg:px-16 xl:px-32 mt-[80px]" style={{ fontFamily: 'Roboto, Arial, sans-serif' }}>
+      {/* Page header with violet to purple gradient and right-aligned title */}
+      <div
+        className="w-screen h-[80px] fixed top-0 left-0 z-20 flex items-center justify-end pr-8"
+        style={{ background: 'linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%)' }}
+      >
+        <span className="font-bold text-2xl text-white select-none" style={{ letterSpacing: '1px', userSelect: 'none' }}>
+          The Web Crawler
+        </span>
+      </div>
+      {/* Glassy purple-to-dark blue gradient background */}
+      <div className="fixed inset-0 -z-10 bg-gradient-to-br from-purple-800 to-blue-900" />
+      {/* Glass effect overlay */}
+      <div className="fixed inset-0 -z-10 backdrop-blur-md bg-white/10" />
+      <div className="w-full max-w-xl sm:max-w-2xl md:max-w-3xl lg:max-w-4xl p-4 sm:p-8 bg-white rounded shadow-lg border-2 border-blue-800 flex flex-col items-center" style={{ marginTop: '90px' }}>
         <h2 className="text-2xl font-bold mb-6 text-center">Analysis Details</h2>
-        <div className="w-full h-96 flex items-center justify-center">
+         <div className="w-full h-64 sm:h-80 md:h-96 flex items-center justify-center">
           <Bar data={data} options={options} />
         </div>
-        <div className="mt-8 w-full flex flex-col items-center">
-          <div className="mb-2 text-gray-700"><b>URL:</b> {result.url}</div>
-          <div className="mb-2 text-gray-700"><b>Host name:</b> {result.hostname}</div>
-          <div className="mb-2 text-gray-700"><b>Title:</b> {result.title}</div>
+         <div className="mt-8 w-full flex flex-col items-center px-2 sm:px-4 md:px-8 lg:px-16 xl:px-32">
+           <div className="mb-2 text-gray-700 break-all"><b>URL:</b> {result.url}</div>
+           <div className="mb-2 text-gray-700 break-all"><b>Host name:</b> {result.hostname}</div>
+           <div className="mb-2 text-gray-700 break-all"><b>Title:</b> {result.title}</div>
         </div>
-        {inaccessibleLinksList.length > 0 && (
-          <div className="mt-8 w-full">
-            <h3 className="text-lg font-semibold mb-2 text-center">Inaccessible Links</h3>
-            <table className="min-w-full bg-white border border-gray-300 rounded">
-              <thead>
-                <tr>
-                  <th className="px-4 py-2 border-b text-left">URL</th>
-                  <th className="px-4 py-2 border-b text-left">Status Code</th>
-                </tr>
-              </thead>
-              <tbody>
-                {inaccessibleLinksList.map((item, idx) => (
-                  <tr key={idx}>
-                    <td className="px-4 py-2 border-b break-all">{item.url}</td>
-                    <td className="px-4 py-2 border-b">{item.status}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+         {inaccessibleLinksList.length > 0 && (
+           <div className="mt-8 w-full px-2 sm:px-4 md:px-8 lg:px-16 xl:px-32">
+             <h3 className="text-lg font-semibold mb-2 text-center">Inaccessible Links</h3>
+             {/* Card layout for below xl */}
+             <div className="flex flex-col gap-4 xl:hidden">
+               {inaccessibleLinksList.map((item, idx) => (
+                 <div key={idx} className={`bg-white rounded-2xl shadow-xl shadow-black border-2 border-blue-800 p-4 flex flex-col gap-2 ${idx % 2 === 0 ? 'bg-blue-50' : 'bg-blue-200'}`}>
+                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                     <span><span className="font-bold">URL:</span> <span className="break-all">{item.url}</span></span>
+                     <span><span className="font-bold">Status Code:</span> {item.status}</span>
+                   </div>
+                 </div>
+               ))}
+             </div>
+             {/* Table layout for xl and above */}
+             <table className="hidden xl:table min-w-full bg-white border border-gray-300 rounded text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl">
+               <thead>
+                 <tr>
+                   <th className="px-4 py-2 border-b text-left">URL</th>
+                   <th className="px-4 py-2 border-b text-left">Status Code</th>
+                 </tr>
+               </thead>
+               <tbody>
+                 {inaccessibleLinksList.map((item, idx) => (
+                   <tr key={idx}>
+                     <td className="px-4 py-2 border-b break-all">{item.url}</td>
+                     <td className="px-4 py-2 border-b">{item.status}</td>
+                   </tr>
+                 ))}
+               </tbody>
+             </table>
+           </div>
+         )}
         <button
           className="mt-8 px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
           onClick={() => navigate(-1)}
